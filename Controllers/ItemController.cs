@@ -7,11 +7,11 @@ namespace Siemens.Internship2026.GradeBook.Controllers;
 [Route("api/[controller]")]
 public class ItemController : ControllerBase
 {
-    private readonly IItemReader _reader;
+    private readonly IItemService _itemService;
 
-    public ItemController(IItemReader reader)
+    public ItemController(IItemService itemService)
     {
-        _reader = reader;
+        _itemService = itemService;
     }
 
     [HttpGet]
@@ -19,23 +19,10 @@ public class ItemController : ControllerBase
     {
         Console.WriteLine($"[LOG] {DateTime.UtcNow}: GET api/item called");
 
-        var items = await _reader.GetAllAsync();
-        var itemList = items.ToList();
-
-        var totalCount = itemList.Count;
-        var averageValue = itemList.Any() ? itemList.Average(i => i.Value) : 0;
-
-        Console.WriteLine($"[LOG] Returning {totalCount} items, average value: {averageValue}");
-
         return Ok(new
         {
-            Data = itemList,
-            Statistics = new
-            {
-                TotalCount = totalCount,
-                AverageValue = averageValue,
-                RetrievedAt = DateTime.UtcNow
-            }
+            Data = await _itemService.GetAllItemsAsync(),
+            Statistics = await _itemService.GetStatisticAsync()
         });
     }
 
@@ -50,7 +37,7 @@ public class ItemController : ControllerBase
             return BadRequest("Id must be a positive integer.");
         }
 
-        var item = await _reader.GetByIdAsync(id);
+        var item = await _itemService.GetByIdAsync(id);
         if (item == null)
         {
             Console.WriteLine($"[LOG] Item {id} not found");
