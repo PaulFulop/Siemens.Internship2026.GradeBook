@@ -1,0 +1,7 @@
+ItemController.cs -> GetAll() -> line 22 - 26:
+	- breaks the single responsibility principle because the
+	  controller is also responsible for the business logic of 
+	  converting the items to a list, finding the totalCount and averageValue.
+	THE FIX: ensuring that the ItemController.cs only does what it is suppoed to do
+			by moving the business logic from its method/methods to a service meant for items
+

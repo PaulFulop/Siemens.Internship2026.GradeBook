@@ -1,22 +1,38 @@
 using Siemens.Internship2026.GradeBook.Interfaces;
 using Siemens.Internship2026.GradeBook.Models;
+using System.Buffers.Text;
 
 namespace Siemens.Internship2026.GradeBook.Repositories;
 
-public class ItemRepository : IItemReader
+public class ItemRepository : IItemRepository
 {
-    protected readonly List<Item> _items = new();
-    protected int _nextId = 1;
+    private readonly HttpClient _httpClient;
+    private const string baseUrl = "https://gist.githubusercontent.com/ArdeleanTudor/8ea407832cd9794960e0e6bbd1319f6e/raw";
+    protected List<Item> _items = [];
 
-    public virtual Task<Item?> GetByIdAsync(int id)
+    public ItemRepository(HttpClient httpClient)
     {
-        var item = _items.FirstOrDefault(i => i.Id == id && i.IsActive);
-        return Task.FromResult(item);
+        _httpClient = httpClient;
     }
 
-    public virtual Task<IEnumerable<Item>> GetAllAsync()
+    private async Task EnsureItemsAreLoadedAsync()
     {
-        var items = _items.Where(i => i.IsActive).AsEnumerable();
-        return Task.FromResult(items);
+        if (_items.Count == 0)
+        {
+            var response = await _httpClient.GetFromJsonAsync<ItemWrapper>(baseUrl);
+            _items = response?.Items ?? [];
+        }
+    }
+
+    public async Task<Item?> GetByIdAsync(int id)
+    {
+        await EnsureItemsAreLoadedAsync();
+        return _items.FirstOrDefault(i => i.Id == id && i.IsActive);
+    }
+
+    public async Task<IEnumerable<Item>> GetAllAsync()
+    {
+        await EnsureItemsAreLoadedAsync();
+        return _items.Where(i => i.IsActive);
     }
 }
